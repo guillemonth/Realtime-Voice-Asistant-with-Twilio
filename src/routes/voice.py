@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import Response
-from constants.general_constants import Constants
+from src.constants.general_constants import Constants
 
 constants = Constants()
 router = APIRouter()
