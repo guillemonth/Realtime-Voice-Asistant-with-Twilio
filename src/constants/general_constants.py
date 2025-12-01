@@ -1,7 +1,8 @@
 import os
-
+from dotenv import load_dotenv
+load_dotenv()
 class Constants():
 
-    BASE_URL = "t2c26bmb-8000.uks1.devtunnels.ms"
+    BASE_URL = os.environ.get("BASE_URL","")
 
     TWILIO_OUTPUT_RATE:int  = int(os.environ.get("TWILIO_OUTPUT_RATE",8000))
