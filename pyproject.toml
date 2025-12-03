@@ -5,8 +5,10 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "dotenv>=0.9.9",
     "asyncio>=4.0.0",
     "fastapi>=0.121.0",
+    "google-genai>=1.51.0",
     "requests>=2.32.5",
     "uvicorn>=0.38.0",
 ]
