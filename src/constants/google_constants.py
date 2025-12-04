@@ -4,7 +4,7 @@ load_dotenv()
 
 class GoogleConstants():
     LANGUAGE: str = os.environ.get("GOOGLE_LANGUAGE", "es-ES")
-    VOICE: str = os.environ.get("GOOGLE_VOICE_ID", "Aoede")
+    VOICE: str = os.environ.get("GOOGLE_VOICE_ID", "Kore")
     PROJECT_ID: str = os.environ.get("PROJECT_ID", "")
     LOCATION: str = os.environ.get("GOOGLE_LOCATION", "global")
     MODEL: str = os.environ.get("MODEL", "")

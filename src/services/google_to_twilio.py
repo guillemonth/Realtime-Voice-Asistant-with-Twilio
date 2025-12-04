@@ -5,7 +5,7 @@ import json
 from typing import List
 from fastapi import WebSocket
 from google.genai.types import LiveServerContent,Content,Part,Blob
-from src.tools.audio_tools import pcm16k_to_ulaw8k
+from src.tools.audio_tools import pcm16k_to_ulaw8k,convert_pcm_16k_to_mulaw_8k
 
 log = logging.getLogger("google_to_twilio")
 
@@ -13,7 +13,8 @@ async def forward_google_to_twilio(t_ws: WebSocket,g_ws,call_data):
     audio_buffer = b''
     # while True:
         # msg = await g_ws.receive():
-    async for msg in g_ws.receive():
+    file = open("audio.wav",'ab')
+    async for msg in g_ws:
         # msg = json.loads(raw_msg)
         # log.info(f"mensaje recibido de google => {msg}")
         # try:
@@ -26,6 +27,9 @@ async def forward_google_to_twilio(t_ws: WebSocket,g_ws,call_data):
         inline_data: Blob|None = getattr(part, "inline_data", None) if part else None
         data: str|None = getattr(inline_data, "data", None) if inline_data else None
 
+        if not part:
+            log.info(f"log de google => {msg}")
+
         input_transcription_obj = getattr(server_content, "input_transcription", None) if server_content else None
         input_transcription = getattr(input_transcription_obj, "text", None) if input_transcription_obj else None
         # log.info(f"tenemos msg => {msg}")
@@ -35,7 +39,9 @@ async def forward_google_to_twilio(t_ws: WebSocket,g_ws,call_data):
         if data:
             raw_audio = b''
             try:
-                raw_audio = base64.b64decode(data)
+                # raw_audio = base64.b64decode(data)
+                raw_audio = data
+                
             except:
                 log.error(f"error al decodificar => {data}")
 
@@ -44,25 +50,26 @@ async def forward_google_to_twilio(t_ws: WebSocket,g_ws,call_data):
                 continue
 
             # log.info(f"decoded audio => {raw_audio}")
-            audio_buffer += raw_audio
-            mulaw_audio = await pcm16k_to_ulaw8k(audio_buffer)
+            audio_buffer += raw_audio # type: ignore
+            
+            #In case the amount of bytes is odd, we have to store
+            # if len(audio_buffer) % 2 != 0:
+            #     continue
 
-            #in case that the audio buffer could not be converted into mulaw, waits for the next package
-            if len(mulaw_audio) != 0:
-                audio_buffer = b''
-                continue
-            log.info("se envian cositas")
+            mulaw_audio = await pcm16k_to_ulaw8k(audio_buffer)
+            # mulaw_audio = convert_pcm_16k_to_mulaw_8k(raw_audio)
+            file.write(mulaw_audio)
+            audio_buffer = b''
+
             payload = base64.b64encode(mulaw_audio).decode()
-            await t_ws.send_text(
-                json.dumps(
-                    {
-                        "event": "media",
-                        "streamSid": call_data.get("stream_sid"),
-                        "media": {"payload": payload},
-                    }
-                )
-            )
+            input = json.dumps({
+                "event": "media",
+                "streamSid": call_data.get("stream_sid"),
+                "media": {"payload": payload},
+            })
+            await t_ws.send_text(input)
         # except Exception as e:
         #     log.info(f"algo ha petado => {e.with_traceback} || {e.args}")
     log.info("sale del bucle")
+    file.close()
     await asyncio.sleep(100)
