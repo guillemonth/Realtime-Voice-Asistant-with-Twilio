@@ -1,22 +1,20 @@
+import asyncio
+import json
 import logging
 import os
-from typing import Dict, Optional
+from typing import Dict, Optional,AsyncIterator
 from google import genai
 from google.genai import types as gtypes
 from google.oauth2 import service_account
 from src.constants.google_constants import google_constants as g_constants
+from contextlib import asynccontextmanager
 
 log = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)  # asegura que los INFO se impriman al ejecutar el script directamente
 
-async def build_google_client():
-    """
-    Context manager yielding a session adapter backed by the Google SDK.
-
-    Uses Vertex AI with service account credentials from a JSON file, mirroring
-    the approach in liveapi_sdk_example_speech.py. If the credentials file is
-    not found, falls back to API‑key mode for development convenience.
-    """
+@asynccontextmanager
+async def connect_google_live():
+    """"""
 
     client = None
 
@@ -81,19 +79,15 @@ async def build_google_client():
             "voice_config": {
                 "prebuilt_voice_config": {"voice_name": g_constants.VOICE}
             },
-            "language_code":g_constants.LANGUAGE
+            "language_code": g_constants.LANGUAGE
         }
     }
-    return client, g_constants.MODEL, config
+    async with client.aio.live.connect(model=g_constants.MODEL, config=config) as session: # type: ignore
+        yield GoogleSDKSessionAdapter(session)
     
 
 def build_sa_info() -> Optional[Dict[str, str]]:
-    """Build a service-account info dict from environment variables.
-
-    Returns a dict compatible with
-    google.oauth2.service_account.Credentials.from_service_account_info,
-    or None if required variables are missing.
-    """
+    """"""
 
     log.info("entra a la función")
 
@@ -134,3 +128,32 @@ def build_sa_info() -> Optional[Dict[str, str]]:
         "universe_domain": "googleapis.com",
     }
     return info
+
+class GoogleSDKSessionAdapter:
+    """"""
+
+    def __init__(self, session: "genai.live.AsyncSession") -> None:
+        self._session = session
+        self._recv_iter: Optional[AsyncIterator[gtypes.LiveServerMessage]] = None
+
+    # ---------- Sending (client -> server) ----------
+    async def send(self, input: Dict[str,str]) -> None:
+        await self._session.send_realtime_input(media = input)
+
+    # ---------- Receiving (server -> client) ----------
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self) -> gtypes.LiveServerMessage:
+        while True:
+            if self._recv_iter is None:
+                self._recv_iter = self._session.receive().__aiter__()
+            try:
+                msg = await self._recv_iter.__anext__() # type: ignore
+                # return json.dumps(self._msg_to_ws_schema(msg))
+                return msg
+            except StopAsyncIteration:
+                # Turn complete; start a new receive stream next iteration
+                self._recv_iter = None
+                await asyncio.sleep(0)
+                continue
