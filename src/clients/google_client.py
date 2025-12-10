@@ -79,7 +79,7 @@ async def connect_google_live():
             "voice_config": {
                 "prebuilt_voice_config": {"voice_name": g_constants.VOICE}
             },
-            "language_code":g_constants.LANGUAGE
+            "language_code": g_constants.LANGUAGE
         }
     }
     async with client.aio.live.connect(model=g_constants.MODEL, config=config) as session: # type: ignore

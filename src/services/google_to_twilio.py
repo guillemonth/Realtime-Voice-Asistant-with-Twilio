@@ -4,8 +4,8 @@ import logging
 import json
 from typing import List
 from fastapi import WebSocket
-from google.genai.types import LiveServerContent,Content,Part,Blob
-from src.tools.audio_tools import pcm16k_to_ulaw8k,convert_pcm_16k_to_mulaw_8k
+from google.genai.types import LiveServerContent,Content,Part,Blob,Transcription
+from src.tools.audio_tools import pcm16k_to_ulaw8k
 
 log = logging.getLogger("google_to_twilio")
 
@@ -30,20 +30,19 @@ async def forward_google_to_twilio(t_ws: WebSocket,g_ws,call_data):
         if not part:
             log.info(f"log de google => {msg}")
 
-        input_transcription_obj = getattr(server_content, "input_transcription", None) if server_content else None
-        input_transcription = getattr(input_transcription_obj, "text", None) if input_transcription_obj else None
-        # log.info(f"tenemos msg => {msg}")
+        input_transcription_obj: Transcription|None = getattr(server_content, "input_transcription", None) if server_content else None
+        input_transcription: str|None = getattr(input_transcription_obj, "text", None) if input_transcription_obj else None
+        
         if input_transcription:
             log.info(f"tenemos input_transcription => {input_transcription}")
-        # log.info(f"tenemos data => {data}")
+        
         if data:
-            raw_audio = b''
+            raw_audio: bytes = b''
             try:
-                # raw_audio = base64.b64decode(data)
                 raw_audio = data
                 
-            except:
-                log.error(f"error al decodificar => {data}")
+            except BaseException as e:
+                log.error(f"error al decodificar => {e}|| {data}")
 
             #in case the audio content is empty, we'll wait for the next package
             if len(raw_audio) == 0:
