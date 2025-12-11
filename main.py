@@ -1,9 +1,8 @@
-from src.routes.voice import router as voice_router
-from src.routes.websocket import router as websocket_router
-
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from src.routes.voice import router as voice_router
+from src.routes.websocket import router as websocket_router
 
 app = FastAPI()
 app.add_middleware(
