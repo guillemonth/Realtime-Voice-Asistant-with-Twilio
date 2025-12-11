@@ -1,28 +1,44 @@
-import asyncio
-import json
+from typing import (
+    Dict, 
+    Optional,
+    AsyncIterator,
+)
 import logging
-import os
-from typing import Dict, Optional,AsyncIterator
+import asyncio
+from contextlib import asynccontextmanager
 from google import genai
-from google.genai import types as gtypes
+from google.genai.live import AsyncSession
+from google.genai.types import (
+    HttpOptions,
+    LiveServerMessage,
+    LiveConnectConfigDict,
+    Modality,
+    RealtimeInputConfigDict,
+    AutomaticActivityDetectionDict,
+)
 from google.oauth2 import service_account
 from src.constants.google_constants import google_constants as g_constants
-from contextlib import asynccontextmanager
 
 log = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)  # asegura que los INFO se impriman al ejecutar el script directamente
+logging.basicConfig(level=logging.INFO)
 
 @asynccontextmanager
 async def connect_google_live():
-    """"""
-
-    client = None
-
+    """
+    Creates the connection to the google live API.
+    Yields:
+        GoogleSDKSessionAdapter: An adapter for the Google Live SDK session.
+    Raises:
+        RuntimeError: If the service account info is not found or project ID is missing.
+    """
     
     sa_info = build_sa_info()
     if sa_info is None:
         raise RuntimeError("No Service Account Info was found")
     
+    project_id = None
+    creds = None
+
     try:
         project_id = g_constants.PROJECT_ID
         if not project_id:
@@ -32,27 +48,27 @@ async def connect_google_live():
             sa_info,
             scopes= ["https://www.googleapis.com/auth/cloud-platform"],
         ).with_quota_project(project_id)
-        
-        # custom http options for solving keepalive error
-        http_opts = gtypes.HttpOptions(
-            async_client_args={
-                "ping_interval": 10,
-                "ping_timeout": 60,
-                "close_timeout": 20,
-                "open_timeout": 15,
-                "max_queue": 32
-            }
-        )
-
-        client = genai.Client(
-            vertexai= True,
-            project= project_id,
-            location= g_constants.LOCATION,
-            credentials= creds,
-            http_options= http_opts
-        )
     except Exception as exc:
         log.warning("Failed to init Vertex AI client from env SA info: %s", exc)
+        # custom http options for solving keepalive error
+    http_opts = HttpOptions(
+        async_client_args={
+            "ping_interval": 10,
+            "ping_timeout": 60,
+            "close_timeout": 20,
+            "open_timeout": 15,
+            "max_queue": 32
+        }
+    )
+
+    client = genai.Client(
+        vertexai= True,
+        project= project_id,
+        location= g_constants.LOCATION,
+        credentials= creds,
+        http_options= http_opts
+    )
+    
 
     realtime_input_config = {
         "automatic_activity_detection": {
@@ -82,12 +98,18 @@ async def connect_google_live():
             "language_code": g_constants.LANGUAGE
         }
     }
+    
     async with client.aio.live.connect(model=g_constants.MODEL, config=config) as session: # type: ignore
         yield GoogleSDKSessionAdapter(session)
     
 
 def build_sa_info() -> Optional[Dict[str, str]]:
-    """"""
+    """
+    Builds the service account info dictionary from environment variables.
+
+    Returns:
+        Dict[str,str]: Service account info dictionary or None if any required field is missing.
+    """
 
     log.info("entra a la función")
 
@@ -130,21 +152,34 @@ def build_sa_info() -> Optional[Dict[str, str]]:
     return info
 
 class GoogleSDKSessionAdapter:
-    """"""
+    """
+    Adapter class to handle the connection to Google
+    """
 
-    def __init__(self, session: "genai.live.AsyncSession") -> None:
+    def __init__(self, session: AsyncSession) -> None:
         self._session = session
-        self._recv_iter: Optional[AsyncIterator[gtypes.LiveServerMessage]] = None
+        self._recv_iter: Optional[AsyncIterator[LiveServerMessage]] = None
 
-    # ---------- Sending (client -> server) ----------
     async def send(self, input: Dict[str,str]) -> None:
+        """
+        Sends messages to google
+        Args:
+            input (Dict[str,str]): message to send
+        """
         await self._session.send_realtime_input(media = input)
 
-    # ---------- Receiving (server -> client) ----------
     def __aiter__(self):
+        """"
+        Handles the reception of messages from google
+        """
         return self
 
-    async def __anext__(self) -> gtypes.LiveServerMessage:
+    async def __anext__(self) -> LiveServerMessage:
+        """
+        Iterates over the received messages from google
+        Returns:
+            LiveServerMessage: message received from google
+        """
         while True:
             if self._recv_iter is None:
                 self._recv_iter = self._session.receive().__aiter__()
