@@ -1,5 +1,6 @@
 import os 
 from dotenv import load_dotenv
+from src.tools.prompt_tools import read_sys_prompt
 load_dotenv()
 
 class GoogleConstants():
@@ -15,7 +16,7 @@ class GoogleConstants():
     AAD_PREFIX_MS: str = os.environ.get("AAD_PREFIX_MS","")
     AAD_SILENCE_MS: str = os.environ.get("AAD_SILENCE_MS","")
     AAD_START_ACTIVITY: str = os.environ.get("AAD_START_ACTIVITY","START_OF_ACTIVITY_INTERRUPTS")
-    SYSTEM_PROMPT: str = os.environ.get("SYSTEM_PROMPT","")
+    SYSTEM_PROMPT: str = read_sys_prompt()
 
     #Service Account Info
     PRIVATE_KEY_ID:str = os.environ.get("PRIVATE_KEY_ID","")
