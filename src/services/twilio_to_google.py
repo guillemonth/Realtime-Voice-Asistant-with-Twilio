@@ -3,6 +3,7 @@ import logging
 from fastapi import WebSocket
 from src.clients.google_client import GoogleSDKSessionAdapter
 from src.tools.audio_tools import ulaw8k_to_pcm16k
+from src.constants.google_constants import google_constants
 
 log = logging.getLogger("twilio_to_google")
 
@@ -27,7 +28,7 @@ async def forward_twilio_to_google(t_ws: WebSocket,g_ws: GoogleSDKSessionAdapter
             transformed_audio = await ulaw8k_to_pcm16k(base64.b64decode(audio_bytes))
             await g_ws.send(
                 {
-                    "mimeType": "audio/pcm;rate=16000",
+                    "mimeType": f"audio/pcm;rate={google_constants.GEMINI_INPUT_RATE}",
                     "data": base64.b64encode(transformed_audio).decode()
                 }
             )

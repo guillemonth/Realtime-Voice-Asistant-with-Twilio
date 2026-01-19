@@ -21,7 +21,7 @@ async def root():
     return JSONResponse(
         content={
             "status": "ok",
-            "mensaje": "funciona todo ok"
+            "mensaje": "everything is running smoothly!"
         },
         status_code=200
     )
