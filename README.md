@@ -64,7 +64,7 @@ Once we have our server exposed, store the url generated to later use it in the 
 # 2. Setup Twilio
 Twilio is a cloud software used to manage connections with clients via messages, emails or phone calls. In its free tier, gives 15€ of free credit wich is more than enough for this case.
 
-## 1. First create an account : [link]([htttps://aaaa](https://login.twilio.com/u/signup?state=hKFo2SAyR0J1djBvN0JsNko4bjM2Y3RIendzLVBDZEtZS3BiZ6Fur3VuaXZlcnNhbC1sb2dpbqN0aWTZIEJQNnVWR3NGZURXai0xSDdLNHpBT3l0aHBVdWNyekJlo2NpZNkgTW05M1lTTDVSclpmNzdobUlKZFI3QktZYjZPOXV1cks))
+## 1. First create an account : [link](https://login.twilio.com/u/signup?state=hKFo2SAyR0J1djBvN0JsNko4bjM2Y3RIendzLVBDZEtZS3BiZ6Fur3VuaXZlcnNhbC1sb2dpbqN0aWTZIEJQNnVWR3NGZURXai0xSDdLNHpBT3l0aHBVdWNyekJlo2NpZNkgTW05M1lTTDVSclpmNzdobUlKZFI3QktZYjZPOXV1cks)
 You'll need and email account, and a phone number.
 ## 2. Buy a Phone Number: [link](https://console.twilio.com/us1/develop/phone-numbers/manage/search?isoCountry=US&types[]=Local&types[]=Mobile&types[]=Tollfree&capabilities[]=Fax&capabilities[]=Mms&capabilities[]=Sms&capabilities[]=Voice&searchTerm=&searchFilter=left&searchType=number)
    ![buy a phone](./img/buy_phone.png)
@@ -87,7 +87,7 @@ To authenticate in the API, we are going to use a service account credentials. I
 
 To create a service account, follow this steps:
 1. Go to the [service account creation page](https://console.cloud.google.com/projectselector2/iam-admin/serviceaccounts/create) and follow the steps 
-2. Once created, look for the service account that was just created, and click on the three dots on the right and `click manage keys`
+2. Once created, look for the service account that was just created, and click on the three dots on the right and click `manage keys`
 ![manage keys](./img/manage_keys.png)
 1. Now create a new key and select `JSON`
 ![create new key](./img/create_new_key.png)
